@@ -87,6 +87,95 @@ export const downloadSampleExcelTemplate = () => {
   XLSX.writeFile(workbook, 'plantilla_libreria_formato.xlsx');
 };
 
+export const parseExcelRows = (rawRows: ExcelImportRow[]): Book[] => {
+  const parsedBooks: Book[] = rawRows.map((row, index) => {
+    // Normalize column names regardless of accents or exact casing
+    const findValue = (...keys: string[]): string => {
+      for (const k of keys) {
+        if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+          return String(row[k]).trim();
+        }
+      }
+      // Case-insensitive search fallback
+      const lowerRow = Object.keys(row).reduce((acc: Record<string, any>, currKey) => {
+        acc[currKey.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')] = row[currKey];
+        return acc;
+      }, {});
+
+      for (const k of keys) {
+        const normKey = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (lowerRow[normKey] !== undefined && lowerRow[normKey] !== null) {
+          return String(lowerRow[normKey]).trim();
+        }
+      }
+      return '';
+    };
+
+    const rawIsbn = findValue('ISBN', 'isbn', 'codigo', 'barcode');
+    const rawTitulo = findValue('Título', 'Titulo', 'titulo', 'title', 'nombre');
+    const rawEditorial = findValue('Editorial', 'editorial', 'publisher');
+    const rawCategoria = findValue('Categoría', 'Categoria', 'categoria', 'category', 'genero');
+    const rawImagen = findValue('Imagen URL', 'Imagen', 'imagen', 'image', 'cover', 'foto');
+    const rawUrl = findValue('URL', 'url', 'link', 'enlace', 'buscalibre');
+    const rawEstanteria = findValue('Estantería', 'Estanteria', 'estanteria', 'shelf', 'estante', 'mueble');
+    const rawUbicacion = findValue('Ubicación', 'Ubicacion', 'ubicacion', 'location', 'balda', 'posicion');
+    const rawEstado = findValue('Estado', 'estado', 'status');
+    const rawNotas = findValue('Notas', 'notas', 'comentario', 'observaciones');
+
+    // Derive author if title contains " - Author"
+    let title = rawTitulo || 'Sin Título';
+    let author = '';
+    if (title.includes(' - ')) {
+      const parts = title.split(' - ');
+      if (parts.length >= 2) {
+        author = parts[parts.length - 1].trim();
+      }
+    }
+
+    return {
+      id: `imp-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
+      isbn: rawIsbn || `S/N-${index + 1}`,
+      titulo: title,
+      autor: author,
+      editorial: rawEditorial || 'Sin Editorial',
+      categoria: rawCategoria || 'Sin Categoría',
+      imagen: rawImagen,
+      url: rawUrl,
+      estanteria: rawEstanteria || 'General',
+      ubicacion: rawUbicacion || 'Sin Asignar',
+      estado: (['Disponible', 'Leído', 'Prestado', 'Deseado'].includes(rawEstado) 
+        ? rawEstado 
+        : 'Disponible') as Book['estado'],
+      fechaAgregado: new Date().toISOString().split('T')[0],
+      notas: rawNotas,
+    };
+  });
+
+  // Filter out empty rows
+  return parsedBooks.filter(
+    (b) => b.titulo !== 'Sin Título' || b.isbn !== `S/N-1`
+  );
+};
+
+export const fetchRepoExcelFile = async (): Promise<Book[]> => {
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+  const fileUrl = `${cleanBase}libreria.xlsx?v=${Date.now()}`;
+
+  const response = await fetch(fileUrl);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: No se pudo descargar libreria.xlsx`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+
+  const rawRows = XLSX.utils.sheet_to_json<ExcelImportRow>(worksheet, { defval: '' });
+  return parseExcelRows(rawRows);
+};
+
 export const parseExcelFile = (file: File): Promise<Book[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -99,77 +188,7 @@ export const parseExcelFile = (file: File): Promise<Book[]> => {
         const worksheet = workbook.Sheets[firstSheetName];
 
         const rawRows = XLSX.utils.sheet_to_json<ExcelImportRow>(worksheet, { defval: '' });
-
-        const parsedBooks: Book[] = rawRows.map((row, index) => {
-          // Normalize column names regardless of accents or exact casing
-          const findValue = (...keys: string[]): string => {
-            for (const k of keys) {
-              if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
-                return String(row[k]).trim();
-              }
-            }
-            // Case-insensitive search fallback
-            const lowerRow = Object.keys(row).reduce((acc: Record<string, any>, currKey) => {
-              acc[currKey.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')] = row[currKey];
-              return acc;
-            }, {});
-
-            for (const k of keys) {
-              const normKey = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-              if (lowerRow[normKey] !== undefined && lowerRow[normKey] !== null) {
-                return String(lowerRow[normKey]).trim();
-              }
-            }
-            return '';
-          };
-
-          const rawIsbn = findValue('ISBN', 'isbn', 'codigo', 'barcode');
-          const rawTitulo = findValue('Título', 'Titulo', 'titulo', 'title', 'nombre');
-          const rawEditorial = findValue('Editorial', 'editorial', 'publisher');
-          const rawCategoria = findValue('Categoría', 'Categoria', 'categoria', 'category', 'genero');
-          const rawImagen = findValue('Imagen URL', 'Imagen', 'imagen', 'image', 'cover', 'foto');
-          const rawUrl = findValue('URL', 'url', 'link', 'enlace', 'buscalibre');
-          const rawEstanteria = findValue('Estantería', 'Estanteria', 'estanteria', 'shelf', 'estante', 'mueble');
-          const rawUbicacion = findValue('Ubicación', 'Ubicacion', 'ubicacion', 'location', 'balda', 'posicion');
-          const rawEstado = findValue('Estado', 'estado', 'status');
-          const rawNotas = findValue('Notas', 'notas', 'comentario', 'observaciones');
-
-          // Derive author if title contains " - Author"
-          let title = rawTitulo || 'Sin Título';
-          let author = '';
-          if (title.includes(' - ')) {
-            const parts = title.split(' - ');
-            if (parts.length >= 2) {
-              // Usually title - author or box set - Maas, Sarah J.
-              author = parts[parts.length - 1].trim();
-            }
-          }
-
-          return {
-            id: `imp-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
-            isbn: rawIsbn || `S/N-${index + 1}`,
-            titulo: title,
-            autor: author,
-            editorial: rawEditorial || 'Sin Editorial',
-            categoria: rawCategoria || 'Sin Categoría',
-            imagen: rawImagen,
-            url: rawUrl,
-            estanteria: rawEstanteria || 'General',
-            ubicacion: rawUbicacion || 'Sin Asignar',
-            estado: (['Disponible', 'Leído', 'Prestado', 'Deseado'].includes(rawEstado) 
-              ? rawEstado 
-              : 'Disponible') as Book['estado'],
-            fechaAgregado: new Date().toISOString().split('T')[0],
-            notas: rawNotas,
-          };
-        });
-
-        // Filter out empty rows (where title and isbn are missing)
-        const validBooks = parsedBooks.filter(
-          (b) => b.titulo !== 'Sin Título' || b.isbn !== `S/N-1`
-        );
-
-        resolve(validBooks);
+        resolve(parseExcelRows(rawRows));
       } catch (err) {
         reject(err);
       }

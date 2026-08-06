@@ -6,6 +6,11 @@ Aplicación web interactiva para digitalizar, organizar y gestionar un catálogo
 
 ## 🚀 Características
 
+- **Sincronización Automática con Excel del Repositorio (`public/libreria.xlsx`):**
+  - La aplicación lee automáticamente el catálogo desde el archivo `public/libreria.xlsx` guardado en el repositorio.
+  - Esto garantiza que la lista pública en el sitio web está **100% controlada por ti desde GitHub**. Ningún visitante puede alterar permanentemente lo que se muestra en la web.
+- **Modo Administrador Protegido por PIN:**
+  - Las herramientas de edición, creación, eliminación e importación rápida están protegidas por clave PIN personal.
 - **Importación y Exportación Excel (.xlsx / .csv):**
   - Carga masiva de libros directamente desde tu planilla de Excel.
   - Reconocimiento automático de campos (ISBN, Título, Editorial, Categoría, Imagen URL, URL, Estantería, Ubicación, Estado, Notas).
@@ -70,8 +75,24 @@ Para ejecutar el proyecto en tu computadora localmente:
 
 ---
 
+## 🌐 Publicar en GitHub Pages (Hosting Gratuito)
+
+Este repositorio incluye una acción automatizada (`.github/workflows/deploy.yml`) que compila y publica tu sitio web automáticamente cada vez que subes cambios a la rama principal.
+
+### Pasos para activar el hosting gratuito en GitHub:
+
+1. Ve a tu repositorio en **GitHub.com**.
+2. Entra en la pestaña **Settings** (Configuración del repositorio).
+3. En el menú de la izquierda, haz clic en **Pages**.
+4. En **Build and deployment** -> **Source**, selecciona **GitHub Actions**.
+5. ¡Listo! Cada vez que hagas `git push`, GitHub compilará el código y desplegará tu app en una URL gratuita con el formato:
+   `https://TU_USUARIO.github.io/NOMBRE_DEL_REPO/`
+
+---
+
 ## 🔒 Privacidad y Permisos en GitHub
 
 Por defecto en GitHub:
-- Si creas un repositorio **Público**, **cualquier persona podrá ver el código y la app**, pero **SOLO TÚ** (el dueño de la cuenta) tendrás permisos de modificación/escritura (`push`). Nadie más puede modificar el código directamente.
-- Si alguien desea sugerir cambios, deberá hacerlo mediante un *Pull Request*, el cual tú puedes aprobar o rechazar libremente.
+- Si creas un repositorio **Público**, **cualquier persona podrá ver el código y usar la app**, pero **SOLO TÚ** (el dueño de la cuenta) tendrás permisos de modificación/escritura (`push`). Nadie más puede modificar tu código.
+- Si alguien desea sugerir cambios, solo puede hacerlo mediante un *Pull Request*, el cual tú puedes aceptar o rechazar libremente.
+

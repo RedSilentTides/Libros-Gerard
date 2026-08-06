@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Book, ViewMode, FilterState } from './types/book';
 import { INITIAL_BOOKS } from './utils/sampleData';
-import { downloadSampleExcelTemplate } from './utils/excelHandler';
+import { downloadSampleExcelTemplate, fetchRepoExcelFile } from './utils/excelHandler';
 import { Navbar } from './components/Navbar';
 import { StatsDashboard } from './components/StatsDashboard';
 import { BookCard } from './components/BookCard';
@@ -11,11 +11,42 @@ import { BookDetailModal } from './components/BookDetailModal';
 import { BookFormModal } from './components/BookFormModal';
 import { ImportExcelModal } from './components/ImportExcelModal';
 import { ExportModal } from './components/ExportModal';
+import { AdminModal } from './components/AdminModal';
 import { RefreshCw, BookOpen, Plus, FileSpreadsheet, Sparkles, CheckCircle2 } from 'lucide-react';
 
 const STORAGE_KEY = 'digital_library_books_v1';
+const PIN_STORAGE_KEY = 'digital_library_admin_pin';
 
 export default function App() {
+  const [adminPin, setAdminPinState] = useState<string | null>(() => {
+    return localStorage.getItem(PIN_STORAGE_KEY);
+  });
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    const savedPin = localStorage.getItem(PIN_STORAGE_KEY);
+    // If no PIN is configured yet, default to admin until user sets a PIN
+    return !savedPin;
+  });
+
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  const setAdminPin = (pin: string | null) => {
+    setAdminPinState(pin);
+    if (pin) {
+      localStorage.setItem(PIN_STORAGE_KEY, pin);
+    } else {
+      localStorage.removeItem(PIN_STORAGE_KEY);
+    }
+  };
+
+  const requireAdmin = (action: () => void) => {
+    if (isAdmin || !adminPin) {
+      action();
+    } else {
+      setPendingAction(() => action);
+      setIsAdminModalOpen(true);
+    }
+  };
   const [books, setBooks] = useState<Book[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -43,11 +74,38 @@ export default function App() {
 
   // Toast feedback state
   const [toast, setToast] = useState<string | null>(null);
+  const [isSyncingRepo, setIsSyncingRepo] = useState(false);
+  const [isRepoExcelActive, setIsRepoExcelActive] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   };
+
+  const handleSyncFromRepoExcel = async (showNotification = false) => {
+    setIsSyncingRepo(true);
+    try {
+      const repoBooks = await fetchRepoExcelFile();
+      if (repoBooks && repoBooks.length > 0) {
+        setBooks(repoBooks);
+        setIsRepoExcelActive(true);
+        if (showNotification) {
+          showToast(`Catálogo cargado desde public/libreria.xlsx (${repoBooks.length} libros)`);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch public/libreria.xlsx:', err);
+      if (showNotification) {
+        showToast('No se encontró public/libreria.xlsx en el repositorio.');
+      }
+    } finally {
+      setIsSyncingRepo(false);
+    }
+  };
+
+  useEffect(() => {
+    handleSyncFromRepoExcel(false);
+  }, []);
 
   // Modals state
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -157,11 +215,13 @@ export default function App() {
   };
 
   const handleDeleteBook = (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este libro de la librería?')) {
-      setBooks((prev) => prev.filter((b) => b.id !== id));
-      if (selectedBook?.id === id) setSelectedBook(null);
-      showToast('Libro eliminado del catálogo.');
-    }
+    requireAdmin(() => {
+      if (window.confirm('¿Estás seguro de que deseas eliminar este libro de la librería?')) {
+        setBooks((prev) => prev.filter((b) => b.id !== id));
+        if (selectedBook?.id === id) setSelectedBook(null);
+        showToast('Libro eliminado del catálogo.');
+      }
+    });
   };
 
   const handleImportSuccess = (importedBooks: Book[], mode: 'upsert' | 'replace' | 'append') => {
@@ -212,10 +272,12 @@ export default function App() {
   };
 
   const handleResetDemoData = () => {
-    if (window.confirm('¿Restablecer catálogo con los datos de demostración iniciales?')) {
-      setBooks(INITIAL_BOOKS);
-      showToast('Catálogo restablecido con los datos de demo.');
-    }
+    requireAdmin(() => {
+      if (window.confirm('¿Restablecer catálogo con los datos de demostración iniciales?')) {
+        setBooks(INITIAL_BOOKS);
+        showToast('Catálogo restablecido con los datos de demo.');
+      }
+    });
   };
 
   return (
@@ -235,20 +297,57 @@ export default function App() {
         setViewMode={setViewMode}
         filters={filters}
         setFilters={setFilters}
-        onOpenImport={() => setIsImportOpen(true)}
+        onOpenImport={() => requireAdmin(() => setIsImportOpen(true))}
         onOpenExport={() => setIsExportOpen(true)}
         onOpenAddBook={() => {
-          setBookToEdit(null);
-          setIsFormOpen(true);
+          requireAdmin(() => {
+            setBookToEdit(null);
+            setIsFormOpen(true);
+          });
         }}
         onDownloadTemplate={downloadSampleExcelTemplate}
         onResetData={handleResetDemoData}
         totalBooks={books.length}
+        isAdmin={isAdmin}
+        hasAdminPin={Boolean(adminPin)}
+        onOpenAdminModal={() => setIsAdminModalOpen(true)}
+        onSyncRepoExcel={() => handleSyncFromRepoExcel(true)}
+        isSyncingRepo={isSyncingRepo}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
+        {/* Repo Source Notice Banner */}
+        <div className="mb-6 p-4 bg-indigo-50/80 border border-indigo-200/80 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5 md:mt-0">
+              <FileSpreadsheet className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                <span>Fuente oficial: public/libreria.xlsx en GitHub</span>
+                {isRepoExcelActive && (
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-semibold border border-emerald-200">
+                    Sincronizado
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-indigo-800/90 mt-0.5 leading-relaxed">
+                El catálogo que ven todos los visitantes se carga directamente desde el archivo <strong>libreria.xlsx</strong> alojado en tu repositorio. Para cambiar o agregar libros permanentemente en la web, actualiza ese archivo Excel en GitHub.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => handleSyncFromRepoExcel(true)}
+            disabled={isSyncingRepo}
+            className="self-end md:self-auto px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors shrink-0 flex items-center gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingRepo ? 'animate-spin' : ''}`} />
+            <span>Recargar Excel</span>
+          </button>
+        </div>
+
         {/* Statistics & Filter Bar */}
         <StatsDashboard
           books={books}
@@ -303,8 +402,10 @@ export default function App() {
                     book={book}
                     onSelectBook={(b) => setSelectedBook(b)}
                     onEditBook={(b) => {
-                      setBookToEdit(b);
-                      setIsFormOpen(true);
+                      requireAdmin(() => {
+                        setBookToEdit(b);
+                        setIsFormOpen(true);
+                      });
                     }}
                     onDeleteBook={handleDeleteBook}
                   />
@@ -317,8 +418,10 @@ export default function App() {
                 books={filteredBooks}
                 onSelectBook={(b) => setSelectedBook(b)}
                 onEditBook={(b) => {
-                  setBookToEdit(b);
-                  setIsFormOpen(true);
+                  requireAdmin(() => {
+                    setBookToEdit(b);
+                    setIsFormOpen(true);
+                  });
                 }}
                 onDeleteBook={handleDeleteBook}
               />
@@ -360,8 +463,10 @@ export default function App() {
         book={selectedBook}
         onClose={() => setSelectedBook(null)}
         onEdit={(b) => {
-          setBookToEdit(b);
-          setIsFormOpen(true);
+          requireAdmin(() => {
+            setBookToEdit(b);
+            setIsFormOpen(true);
+          });
         }}
       />
 
@@ -384,6 +489,22 @@ export default function App() {
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
         books={books}
+      />
+
+      <AdminModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        adminPin={adminPin}
+        setAdminPin={setAdminPin}
+        isAdmin={isAdmin}
+        setIsAdmin={setIsAdmin}
+        showToast={showToast}
+        onAuthenticatedSuccess={() => {
+          if (pendingAction) {
+            pendingAction();
+            setPendingAction(null);
+          }
+        }}
       />
     </div>
   );

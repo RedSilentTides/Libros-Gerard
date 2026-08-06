@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, FileSpreadsheet, Download, Plus, Search, Layers, Grid, Table as TableIcon, Bookmark, RefreshCw } from 'lucide-react';
+import { BookOpen, FileSpreadsheet, Download, Plus, Search, Layers, Grid, Table as TableIcon, Bookmark, RefreshCw, Lock, Unlock, ShieldCheck } from 'lucide-react';
 import { ViewMode, FilterState } from '../types/book';
 
 interface NavbarProps {
@@ -13,6 +13,11 @@ interface NavbarProps {
   onDownloadTemplate: () => void;
   onResetData: () => void;
   totalBooks: number;
+  isAdmin: boolean;
+  hasAdminPin: boolean;
+  onOpenAdminModal: () => void;
+  onSyncRepoExcel: () => void;
+  isSyncingRepo: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -26,6 +31,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onDownloadTemplate,
   onResetData,
   totalBooks,
+  isAdmin,
+  hasAdminPin,
+  onOpenAdminModal,
+  onSyncRepoExcel,
+  isSyncingRepo,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
@@ -145,15 +155,50 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
+            {/* Admin Lock Toggle */}
+            <button
+              onClick={onOpenAdminModal}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                isAdmin
+                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : hasAdminPin
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+              }`}
+              title={isAdmin ? 'Modo Administrador Activo' : 'Desbloquear Modo Administrador'}
+            >
+              {isAdmin ? (
+                <>
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span className="hidden sm:inline">Admin</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4 text-amber-600" />
+                  <span className="hidden sm:inline">{hasAdminPin ? 'Acceso Admin' : 'Proteger con PIN'}</span>
+                </>
+              )}
+            </button>
+
             {/* Excel Actions */}
             <div className="flex items-center gap-1.5">
               <button
+                onClick={onSyncRepoExcel}
+                disabled={isSyncingRepo}
+                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                title="Sincronizar y recargar catálogo directamente desde public/libreria.xlsx en GitHub"
+              >
+                <RefreshCw className={`w-4 h-4 text-indigo-600 ${isSyncingRepo ? 'animate-spin' : ''}`} />
+                <span>Recargar Repo Excel</span>
+              </button>
+
+              <button
                 onClick={onOpenImport}
                 className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold transition-colors"
-                title="Importar catálogo desde archivo Excel (.xlsx / .csv)"
+                title="Importar catálogo local desde un archivo Excel"
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                <span>Importar Excel</span>
+                <span className="hidden sm:inline">Importar</span>
               </button>
 
               <button
