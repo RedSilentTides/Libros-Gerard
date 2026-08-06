@@ -1,11 +1,77 @@
-<div align="center">
+# Digitalizador de Librería
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Aplicación web interactiva para digitalizar, organizar y gestionar un catálogo de libros físico y digital con soporte de importación/exportación Excel y visualización por estanterías.
 
-  <h1>Built with AI Studio</h2>
+---
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## 🚀 Características
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+- **Importación y Exportación Excel (.xlsx / .csv):**
+  - Carga masiva de libros directamente desde tu planilla de Excel.
+  - Reconocimiento automático de campos (ISBN, Título, Editorial, Categoría, Imagen URL, URL, Estantería, Ubicación, Estado, Notas).
+  - Tres modos de importación: **Fusión/Actualización por ISBN**, **Reemplazar todo** o **Solo agregar nuevos**.
+  - Exportación con un solo clic de la librería completa a archivo `.xlsx`.
+- **Búsqueda Automática por ISBN:**
+  - Consulta a la API pública de Google Books para autocompletar título, autor, editorial, portada y categoría a partir del ISBN.
+- **Visualización por Estanterías y Baldas:**
+  - Modo gráfico que organiza tus libros según el mueble/habitación (`estanteria`) y la repisa/balda (`ubicacion`).
+- **Vista Cuadrícula y Tabla:**
+  - Visualización en tarjetas con portadas y enlaces directos a tienda/BuscaLibre.
+  - Vista en tabla con ordenación interactiva por cualquier columna.
+- **Buscador y Filtros en Tiempo Real:**
+  - Filtrado rápido por categoría, editorial, estantería, estado (Disponible, Leído, Prestado, Deseado) y texto.
+- **Persistencia de Datos:**
+  - Los datos se guardan automáticamente en tu navegador (`localStorage`).
 
-</div>
+---
+
+## 📊 Formato de Excel Compatible
+
+La aplicación acepta planillas Excel con las siguientes columnas (el orden de las columnas es libre y reconoce variantes con o sin tildes):
+
+| Columna | Ejemplo | Descripción |
+| :--- | :--- | :--- |
+| **ISBN** | `9781639731763` | Código de barras / identificador único del libro |
+| **Título** | `Throne of Glass box set (en Inglés) - Maas, Sarah J.` | Título del libro (soporta autor después de `-`) |
+| **Editorial** | `Bloomsbury Publishing` | Casa editorial |
+| **Categoría** | `Fantasía Épica, Fantasía Romántica` | Género o categorías separadas por coma |
+| **Imagen URL** | `https://images.cdn3.buscalibre.com/...` | Enlace a la imagen de portada |
+| **URL** | `https://www.buscalibre.cl/libro-...` | Enlace de compra o ficha web |
+| **Estantería** | `pieza` | Mueble, habitación o estantería principal |
+| **Ubicación** | `Balda 1.` | Repisa o ubicación específica dentro del mueble |
+
+---
+
+## 🛠️ Instalación y Desarrollo Local
+
+Para ejecutar el proyecto en tu computadora localmente:
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/TU_USUARIO/TU_REPOSITORIO.git
+   cd TU_REPOSITORIO
+   ```
+
+2. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
+
+3. **Ejecutar en modo desarrollo:**
+   ```bash
+   npm run dev
+   ```
+   Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+
+4. **Compilar para producción:**
+   ```bash
+   npm run build
+   ```
+
+---
+
+## 🔒 Privacidad y Permisos en GitHub
+
+Por defecto en GitHub:
+- Si creas un repositorio **Público**, **cualquier persona podrá ver el código y la app**, pero **SOLO TÚ** (el dueño de la cuenta) tendrás permisos de modificación/escritura (`push`). Nadie más puede modificar el código directamente.
+- Si alguien desea sugerir cambios, deberá hacerlo mediante un *Pull Request*, el cual tú puedes aprobar o rechazar libremente.
