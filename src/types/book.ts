@@ -20,6 +20,7 @@ export type ViewMode = 'grid' | 'table' | 'shelf';
 export interface FilterState {
   query: string;
   categorias: string[];
+  autores: string[];
   editoriales: string[];
   estanterias: string[];
   estados: string[];

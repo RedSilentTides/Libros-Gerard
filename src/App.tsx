@@ -29,10 +29,17 @@ export default function App() {
     return INITIAL_BOOKS;
   });
 
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      return 'table';
+    }
+    return 'grid';
+  });
+
   const [filters, setFilters] = useState<FilterState>({
     query: '',
     categorias: [],
+    autores: [],
     editoriales: [],
     estanterias: [],
     estados: [],
@@ -95,6 +102,19 @@ export default function App() {
     return Array.from(set).sort();
   }, [books]);
 
+  const autores = useMemo(() => {
+    const set = new Set<string>();
+    books.forEach((b) => {
+      if (b.autor) {
+        b.autor.split(',').forEach((a) => {
+          const trimmed = a.trim();
+          if (trimmed) set.add(trimmed);
+        });
+      }
+    });
+    return Array.from(set).sort();
+  }, [books]);
+
   const editorials = useMemo(() => {
     const set = new Set<string>();
     books.forEach((b) => {
@@ -145,6 +165,16 @@ export default function App() {
         if (!matchesCategory) return false;
       }
 
+      if (filters.autores && filters.autores.length > 0) {
+        const matchesAutor = filters.autores.some((selAutor) => {
+          if (!b.autor) return false;
+          const bookAutores = b.autor.split(',').map((a) => a.toLowerCase().trim());
+          const target = selAutor.toLowerCase().trim();
+          return bookAutores.includes(target) || b.autor.toLowerCase().includes(target);
+        });
+        if (!matchesAutor) return false;
+      }
+
       if (filters.editoriales && filters.editoriales.length > 0) {
         const matchesEditorial = filters.editoriales.some(
           (ed) => b.editorial && b.editorial.toLowerCase().trim() === ed.toLowerCase().trim()
@@ -179,6 +209,17 @@ export default function App() {
     });
   };
 
+  const handleToggleAutor = (autor: string) => {
+    setFilters((prev) => {
+      const current = prev.autores || [];
+      const exists = current.includes(autor);
+      return {
+        ...prev,
+        autores: exists ? current.filter((a) => a !== autor) : [...current, autor],
+      };
+    });
+  };
+
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans flex flex-col">
       
@@ -209,6 +250,7 @@ export default function App() {
         <StatsDashboard
           books={books}
           categories={categories}
+          autores={autores}
           editorials={editorials}
           estanterias={estanterias}
           filters={filters}
@@ -224,7 +266,7 @@ export default function App() {
             <div>
               <h3 className="font-bold text-slate-900 text-base">No se encontraron libros</h3>
               <p className="text-xs text-slate-500 mt-1">
-                {filters.query || filters.categorias.length > 0 || filters.editoriales.length > 0 || filters.estanterias.length > 0 || filters.estados.length > 0
+                {filters.query || filters.categorias.length > 0 || filters.autores.length > 0 || filters.editoriales.length > 0 || filters.estanterias.length > 0 || filters.estados.length > 0
                   ? 'Intenta borrar algunos filtros de búsqueda para ver más resultados.'
                   : 'No hay libros disponibles en el catálogo.'}
               </p>
@@ -250,6 +292,7 @@ export default function App() {
                     book={book}
                     onSelectBook={(b) => setSelectedBook(b)}
                     onToggleCategory={handleToggleCategory}
+                    onToggleAutor={handleToggleAutor}
                   />
                 ))}
               </div>
@@ -260,6 +303,7 @@ export default function App() {
                 books={filteredBooks}
                 onSelectBook={(b) => setSelectedBook(b)}
                 onToggleCategory={handleToggleCategory}
+                onToggleAutor={handleToggleAutor}
               />
             )}
 

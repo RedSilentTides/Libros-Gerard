@@ -6,6 +6,7 @@ interface BookTableProps {
   books: Book[];
   onSelectBook: (book: Book) => void;
   onToggleCategory?: (category: string) => void;
+  onToggleAutor?: (autor: string) => void;
 }
 
 type SortField = 'titulo' | 'isbn' | 'editorial' | 'estanteria' | 'categoria';
@@ -14,6 +15,7 @@ export const BookTable: React.FC<BookTableProps> = ({
   books,
   onSelectBook,
   onToggleCategory,
+  onToggleAutor,
 }) => {
   const [sortField, setSortField] = useState<SortField>('titulo');
   const [sortAsc, setSortAsc] = useState(true);
@@ -128,7 +130,20 @@ export const BookTable: React.FC<BookTableProps> = ({
                     {book.titulo}
                   </div>
                   {book.autor && (
-                    <p className="text-xs text-slate-500 italic mt-0.5">{book.autor}</p>
+                    <p
+                      onClick={(e) => {
+                        if (onToggleAutor && book.autor) {
+                          e.stopPropagation();
+                          onToggleAutor(book.autor);
+                        }
+                      }}
+                      className={`text-xs text-slate-500 italic mt-0.5 ${
+                        onToggleAutor ? 'hover:text-amber-700 cursor-pointer transition-colors' : ''
+                      }`}
+                      title={onToggleAutor ? `Filtrar por ${book.autor}` : book.autor}
+                    >
+                      {book.autor}
+                    </p>
                   )}
                 </td>
 

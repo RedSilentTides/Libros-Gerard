@@ -6,12 +6,14 @@ interface BookCardProps {
   book: Book;
   onSelectBook: (book: Book) => void;
   onToggleCategory?: (category: string) => void;
+  onToggleAutor?: (autor: string) => void;
 }
 
 export const BookCard: React.FC<BookCardProps> = ({
   book,
   onSelectBook,
   onToggleCategory,
+  onToggleAutor,
 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -138,6 +140,24 @@ export const BookCard: React.FC<BookCardProps> = ({
           >
             {book.titulo}
           </h3>
+
+          {/* Author */}
+          {book.autor && (
+            <p
+              onClick={(e) => {
+                if (onToggleAutor && book.autor) {
+                  e.stopPropagation();
+                  onToggleAutor(book.autor);
+                }
+              }}
+              className={`text-xs text-slate-600 font-medium italic line-clamp-1 ${
+                onToggleAutor ? 'hover:text-amber-700 cursor-pointer transition-colors' : ''
+              }`}
+              title={onToggleAutor ? `Filtrar por ${book.autor}` : book.autor}
+            >
+              por {book.autor}
+            </p>
+          )}
 
           {/* Editorial & ISBN */}
           <div className="text-xs text-slate-500 space-y-0.5">

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Book, FilterState } from '../types/book';
-import { BookOpen, Layers, Tag, Building2, MapPin, Filter, X, ChevronDown, Check, Search } from 'lucide-react';
+import { BookOpen, Layers, Tag, Building2, MapPin, Filter, X, ChevronDown, Check, Search, User } from 'lucide-react';
 
 interface MultiSelectPopoverProps {
   label: string;
@@ -169,6 +169,7 @@ const MultiSelectPopover: React.FC<MultiSelectPopoverProps> = ({
 interface StatsDashboardProps {
   books: Book[];
   categories: string[];
+  autores: string[];
   editorials: string[];
   estanterias: string[];
   filters: FilterState;
@@ -178,6 +179,7 @@ interface StatsDashboardProps {
 export const StatsDashboard: React.FC<StatsDashboardProps> = ({
   books,
   categories,
+  autores,
   editorials,
   estanterias,
   filters,
@@ -188,6 +190,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
 
   const activeFilterCount =
     (filters.categorias ? filters.categorias.length : 0) +
+    (filters.autores ? filters.autores.length : 0) +
     (filters.editoriales ? filters.editoriales.length : 0) +
     (filters.estanterias ? filters.estanterias.length : 0) +
     (filters.estados ? filters.estados.length : 0);
@@ -196,6 +199,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
     setFilters({
       query: '',
       categorias: [],
+      autores: [],
       editoriales: [],
       estanterias: [],
       estados: [],
@@ -209,6 +213,15 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
       if (!b.categoria) return false;
       const cats = b.categoria.split(',').map((c) => c.toLowerCase().trim());
       return cats.includes(target) || b.categoria.toLowerCase().includes(target);
+    }).length;
+  };
+
+  const getAutorCount = (aut: string) => {
+    const target = aut.toLowerCase().trim();
+    return books.filter((b) => {
+      if (!b.autor) return false;
+      const bookAutores = b.autor.split(',').map((a) => a.toLowerCase().trim());
+      return bookAutores.includes(target) || b.autor.toLowerCase().includes(target);
     }).length;
   };
 
@@ -230,6 +243,13 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
     setFilters((prev) => ({
       ...prev,
       categorias: prev.categorias.filter((c) => c !== cat),
+    }));
+  };
+
+  const removeAutorFilter = (aut: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      autores: prev.autores.filter((a) => a !== aut),
     }));
   };
 
@@ -335,6 +355,16 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
               getOptionCount={getCategoryCount}
             />
 
+            {/* Autores */}
+            <MultiSelectPopover
+              label="Autores"
+              icon={<User className="w-3.5 h-3.5" />}
+              options={autores}
+              selectedValues={filters.autores || []}
+              onChange={(newVals) => setFilters((prev) => ({ ...prev, autores: newVals }))}
+              getOptionCount={getAutorCount}
+            />
+
             {/* Editoriales */}
             <MultiSelectPopover
               label="Editoriales"
@@ -410,6 +440,24 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({
                   type="button"
                   onClick={() => removeCategoryFilter(cat)}
                   className="hover:text-rose-600 text-amber-700 ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+
+            {/* Autor Tags */}
+            {filters.autores?.map((aut) => (
+              <span
+                key={`aut-${aut}`}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-900 rounded-md border border-purple-200 font-medium"
+              >
+                <User className="w-3 h-3 text-purple-600" />
+                <span>{aut}</span>
+                <button
+                  type="button"
+                  onClick={() => removeAutorFilter(aut)}
+                  className="hover:text-rose-600 text-purple-700 ml-0.5"
                 >
                   <X className="w-3 h-3" />
                 </button>
