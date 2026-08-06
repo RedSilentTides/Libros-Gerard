@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, FileSpreadsheet, Download, Plus, Search, Layers, Grid, Table as TableIcon, Bookmark, RefreshCw, Lock, Unlock, ShieldCheck } from 'lucide-react';
+import { BookOpen, Download, Search, Layers, Grid, Table as TableIcon, RefreshCw } from 'lucide-react';
 import { ViewMode, FilterState } from '../types/book';
 
 interface NavbarProps {
@@ -8,13 +8,7 @@ interface NavbarProps {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   onOpenExport: () => void;
-  onOpenAddBook: () => void;
-  onDownloadTemplate: () => void;
-  onResetData: () => void;
   totalBooks: number;
-  isAdmin: boolean;
-  hasAdminPin: boolean;
-  onOpenAdminModal: () => void;
   onSyncRepoExcel: () => void;
   isSyncingRepo: boolean;
 }
@@ -25,13 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   filters,
   setFilters,
   onOpenExport,
-  onOpenAddBook,
-  onDownloadTemplate,
-  onResetData,
   totalBooks,
-  isAdmin,
-  hasAdminPin,
-  onOpenAdminModal,
   onSyncRepoExcel,
   isSyncingRepo,
 }) => {
@@ -53,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {totalBooks} {totalBooks === 1 ? 'libro' : 'libros'}
                   </span>
                 </h1>
-                <p className="text-xs text-slate-5 font-medium mt-1 text-slate-500">
+                <p className="text-xs font-medium mt-1 text-slate-500">
                   Catálogo online con estanterías y sincronización Excel
                 </p>
               </div>
@@ -153,41 +141,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            {/* Admin Lock Toggle */}
-            <button
-              onClick={onOpenAdminModal}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                isAdmin
-                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
-                  : hasAdminPin
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
-              }`}
-              title={isAdmin ? 'Modo Administrador Activo' : 'Desbloquear Modo Administrador'}
-            >
-              {isAdmin ? (
-                <>
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span className="hidden sm:inline">Admin</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4 text-amber-600" />
-                  <span className="hidden sm:inline">{hasAdminPin ? 'Acceso Admin' : 'Proteger con PIN'}</span>
-                </>
-              )}
-            </button>
-
             {/* Excel Actions */}
             <div className="flex items-center gap-1.5">
               <button
                 onClick={onSyncRepoExcel}
                 disabled={isSyncingRepo}
                 className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
-                title="Sincronizar y recargar catálogo directamente desde public/libreria.xlsx en GitHub"
+                title="Recargar catálogo desde public/libreria.xlsx en GitHub"
               >
                 <RefreshCw className={`w-4 h-4 text-indigo-600 ${isSyncingRepo ? 'animate-spin' : ''}`} />
-                <span>Recargar Repo Excel</span>
+                <span>Recargar Excel</span>
               </button>
 
               <button
@@ -199,15 +162,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="hidden sm:inline">Exportar</span>
               </button>
             </div>
-
-            {/* Add Book */}
-            <button
-              onClick={onOpenAddBook}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nuevo Libro</span>
-            </button>
           </div>
         </div>
       </div>

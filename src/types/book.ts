@@ -19,11 +19,11 @@ export type ViewMode = 'grid' | 'table' | 'shelf';
 
 export interface FilterState {
   query: string;
-  categoria: string;
-  editorial: string;
-  estanteria: string;
-  ubicacion: string;
-  estado: string;
+  categorias: string[];
+  editoriales: string[];
+  estanterias: string[];
+  estados: string[];
+  ubicacion?: string;
 }
 
 export interface ExcelImportRow {

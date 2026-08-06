@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { Book } from '../types/book';
-import { MapPin, ExternalLink, Edit2, Trash2, BookOpen, CheckCircle, Clock, Bookmark, HelpCircle } from 'lucide-react';
+import { MapPin, ExternalLink, BookOpen, CheckCircle, Clock, Bookmark } from 'lucide-react';
 
 interface BookCardProps {
   book: Book;
   onSelectBook: (book: Book) => void;
-  onEditBook: (book: Book) => void;
-  onDeleteBook: (id: string) => void;
+  onToggleCategory?: (category: string) => void;
 }
 
 export const BookCard: React.FC<BookCardProps> = ({
   book,
   onSelectBook,
-  onEditBook,
-  onDeleteBook,
+  onToggleCategory,
 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -117,7 +115,14 @@ export const BookCard: React.FC<BookCardProps> = ({
                 .map((cat, i) => (
                   <span
                     key={i}
-                    className="text-[10px] font-semibold px-2 py-0.5 bg-amber-50 text-amber-900 rounded-md border border-amber-200/80 truncate max-w-[160px]"
+                    onClick={(e) => {
+                      if (onToggleCategory) {
+                        e.stopPropagation();
+                        onToggleCategory(cat);
+                      }
+                    }}
+                    className="text-[10px] font-semibold px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-md border border-amber-200/80 truncate max-w-[160px] cursor-pointer transition-colors"
+                    title={`Filtrar por ${cat}`}
                   >
                     {cat}
                   </span>
@@ -163,22 +168,12 @@ export const BookCard: React.FC<BookCardProps> = ({
           <span className="text-xs text-slate-400 italic">Sin enlace</span>
         )}
 
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={() => onEditBook(book)}
-            className="p-1.5 text-slate-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
-            title="Editar libro"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => onDeleteBook(book.id)}
-            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-            title="Eliminar libro"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <button
+          onClick={() => onSelectBook(book)}
+          className="text-xs text-slate-500 hover:text-slate-800 font-medium transition-colors"
+        >
+          Detalles →
+        </button>
       </div>
     </div>
   );

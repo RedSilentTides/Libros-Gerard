@@ -1,14 +1,13 @@
 import React from 'react';
 import { Book } from '../types/book';
-import { X, ExternalLink, MapPin, Tag, Building2, BookOpen, Edit2, Copy, Check, Calendar, StickyNote } from 'lucide-react';
+import { X, ExternalLink, MapPin, Tag, Building2, BookOpen, Copy, Check, Calendar, StickyNote } from 'lucide-react';
 
 interface BookDetailModalProps {
   book: Book | null;
   onClose: () => void;
-  onEdit: (book: Book) => void;
 }
 
-export const BookDetailModal: React.FC<BookDetailModalProps> = ({ book, onClose, onEdit }) => {
+export const BookDetailModal: React.FC<BookDetailModalProps> = ({ book, onClose }) => {
   const [copiedIsbn, setCopiedIsbn] = React.useState(false);
 
   if (!book) return null;
@@ -181,24 +180,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({ book, onClose,
             Registrado el {book.fechaAgregado || 'Recientemente'}
           </span>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => {
-                onClose();
-                onEdit(book);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition-colors"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              <span>Editar Libro</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
-            >
-              Cerrar
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     </div>

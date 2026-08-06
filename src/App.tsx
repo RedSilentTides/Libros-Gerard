@@ -1,52 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Book, ViewMode, FilterState } from './types/book';
 import { INITIAL_BOOKS } from './utils/sampleData';
-import { downloadSampleExcelTemplate, fetchRepoExcelFile } from './utils/excelHandler';
+import { fetchRepoExcelFile } from './utils/excelHandler';
 import { Navbar } from './components/Navbar';
 import { StatsDashboard } from './components/StatsDashboard';
 import { BookCard } from './components/BookCard';
 import { BookTable } from './components/BookTable';
 import { ShelfView } from './components/ShelfView';
 import { BookDetailModal } from './components/BookDetailModal';
-import { BookFormModal } from './components/BookFormModal';
-import { ImportExcelModal } from './components/ImportExcelModal';
 import { ExportModal } from './components/ExportModal';
-import { AdminModal } from './components/AdminModal';
-import { RefreshCw, BookOpen, Plus, FileSpreadsheet, Sparkles, CheckCircle2 } from 'lucide-react';
+import { BookOpen, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 const STORAGE_KEY = 'digital_library_books_v1';
-const PIN_STORAGE_KEY = 'digital_library_admin_pin';
 
 export default function App() {
-  const [adminPin, setAdminPinState] = useState<string | null>(() => {
-    return localStorage.getItem(PIN_STORAGE_KEY);
-  });
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    const savedPin = localStorage.getItem(PIN_STORAGE_KEY);
-    // If no PIN is configured yet, default to admin until user sets a PIN
-    return !savedPin;
-  });
-
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-
-  const setAdminPin = (pin: string | null) => {
-    setAdminPinState(pin);
-    if (pin) {
-      localStorage.setItem(PIN_STORAGE_KEY, pin);
-    } else {
-      localStorage.removeItem(PIN_STORAGE_KEY);
-    }
-  };
-
-  const requireAdmin = (action: () => void) => {
-    if (isAdmin || !adminPin) {
-      action();
-    } else {
-      setPendingAction(() => action);
-      setIsAdminModalOpen(true);
-    }
-  };
   const [books, setBooks] = useState<Book[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -65,17 +32,15 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filters, setFilters] = useState<FilterState>({
     query: '',
-    categoria: '',
-    editorial: '',
-    estanteria: '',
-    ubicacion: '',
-    estado: '',
+    categorias: [],
+    editoriales: [],
+    estanterias: [],
+    estados: [],
   });
 
   // Toast feedback state
   const [toast, setToast] = useState<string | null>(null);
   const [isSyncingRepo, setIsSyncingRepo] = useState(false);
-  const [isRepoExcelActive, setIsRepoExcelActive] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -88,7 +53,6 @@ export default function App() {
       const repoBooks = await fetchRepoExcelFile();
       if (repoBooks && repoBooks.length > 0) {
         setBooks(repoBooks);
-        setIsRepoExcelActive(true);
         if (showNotification) {
           showToast(`Catálogo cargado desde public/libreria.xlsx (${repoBooks.length} libros)`);
         }
@@ -108,10 +72,7 @@ export default function App() {
   }, []);
 
   // Modals state
-  const [isImportOpen, setIsImportOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [bookToEdit, setBookToEdit] = useState<Book | null>(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
   // Sync state to local storage
@@ -175,112 +136,46 @@ export default function App() {
         if (!matchesQuery) return false;
       }
 
-      if (filters.categoria) {
-        const targetCat = filters.categoria.toLowerCase().trim();
+      if (filters.categorias && filters.categorias.length > 0) {
         const bookCats = b.categoria ? b.categoria.split(',').map((c) => c.toLowerCase().trim()) : [];
-        if (!bookCats.includes(targetCat) && !b.categoria.toLowerCase().includes(targetCat)) {
-          return false;
-        }
+        const matchesCategory = filters.categorias.some((selectedCat) => {
+          const sc = selectedCat.toLowerCase().trim();
+          return bookCats.includes(sc) || (b.categoria && b.categoria.toLowerCase().includes(sc));
+        });
+        if (!matchesCategory) return false;
       }
-      if (filters.editorial && b.editorial.toLowerCase() !== filters.editorial.toLowerCase()) {
-        return false;
+
+      if (filters.editoriales && filters.editoriales.length > 0) {
+        const matchesEditorial = filters.editoriales.some(
+          (ed) => b.editorial && b.editorial.toLowerCase().trim() === ed.toLowerCase().trim()
+        );
+        if (!matchesEditorial) return false;
       }
-      if (filters.estanteria && b.estanteria.toLowerCase() !== filters.estanteria.toLowerCase()) {
-        return false;
+
+      if (filters.estanterias && filters.estanterias.length > 0) {
+        const matchesEstanteria = filters.estanterias.some(
+          (est) => b.estanteria && b.estanteria.toLowerCase().trim() === est.toLowerCase().trim()
+        );
+        if (!matchesEstanteria) return false;
       }
-      if (filters.ubicacion && b.ubicacion.toLowerCase() !== filters.ubicacion.toLowerCase()) {
-        return false;
-      }
-      if (filters.estado && b.estado !== filters.estado) {
-        return false;
+
+      if (filters.estados && filters.estados.length > 0) {
+        const matchesEstado = filters.estados.some((est) => b.estado === est);
+        if (!matchesEstado) return false;
       }
 
       return true;
     });
   }, [books, filters]);
 
-  // Book Handlers
-  const handleSaveBook = (bookData: Omit<Book, 'id'> | Book) => {
-    if ('id' in bookData && bookData.id) {
-      // Update existing
-      setBooks((prev) =>
-        prev.map((b) => (b.id === bookData.id ? (bookData as Book) : b))
-      );
-      showToast('¡Libro actualizado correctamente!');
-    } else {
-      // Add new
-      const newBook: Book = {
-        ...bookData,
-        id: `book-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      } as Book;
-      setBooks((prev) => [newBook, ...prev]);
-      showToast('¡Libro agregado al catálogo!');
-    }
-  };
-
-  const handleDeleteBook = (id: string) => {
-    requireAdmin(() => {
-      if (window.confirm('¿Estás seguro de que deseas eliminar este libro de la librería?')) {
-        setBooks((prev) => prev.filter((b) => b.id !== id));
-        if (selectedBook?.id === id) setSelectedBook(null);
-        showToast('Libro eliminado del catálogo.');
-      }
-    });
-  };
-
-  const handleImportSuccess = (importedBooks: Book[], mode: 'upsert' | 'replace' | 'append') => {
-    if (mode === 'replace') {
-      setBooks(importedBooks);
-      showToast(`Catálogo reemplazado con ${importedBooks.length} libros del Excel.`);
-    } else if (mode === 'append') {
-      const existingIsbns = new Set(books.map((b) => b.isbn.trim().toLowerCase()));
-      const newOnly = importedBooks.filter(
-        (b) => !existingIsbns.has(b.isbn.trim().toLowerCase())
-      );
-      setBooks((prev) => [...prev, ...newOnly]);
-      showToast(`Se agregaron ${newOnly.length} libros nuevos sin duplicar.`);
-    } else {
-      // Upsert mode (default & requested)
-      setBooks((prev) => {
-        const bookMap = new Map<string, Book>();
-        // Add current books
-        prev.forEach((b) => {
-          const key = b.isbn ? b.isbn.trim().toLowerCase() : b.id;
-          bookMap.set(key, b);
-        });
-        // Merge imported books
-        importedBooks.forEach((imp) => {
-          const key = imp.isbn ? imp.isbn.trim().toLowerCase() : imp.id;
-          if (bookMap.has(key) && key !== '' && !key.startsWith('s/n')) {
-            const current = bookMap.get(key)!;
-            bookMap.set(key, {
-              ...current,
-              titulo: imp.titulo || current.titulo,
-              editorial: imp.editorial || current.editorial,
-              categoria: imp.categoria || current.categoria,
-              imagen: imp.imagen || current.imagen,
-              url: imp.url || current.url,
-              estanteria: imp.estanteria || current.estanteria,
-              ubicacion: imp.ubicacion || current.ubicacion,
-              estado: imp.estado || current.estado,
-              notas: imp.notas || current.notas,
-            });
-          } else {
-            bookMap.set(imp.id, imp);
-          }
-        });
-        return Array.from(bookMap.values());
-      });
-      showToast(`Librería actualizada mediante fusión Excel (${importedBooks.length} procesados).`);
-    }
-  };
-
-  const handleResetDemoData = () => {
-    requireAdmin(() => {
-      if (window.confirm('¿Restablecer catálogo con los datos de demostración iniciales?')) {
-        setBooks(INITIAL_BOOKS);
-        showToast('Catálogo restablecido con los datos de demo.');
-      }
+  const handleToggleCategory = (cat: string) => {
+    setFilters((prev) => {
+      const current = prev.categorias || [];
+      const exists = current.includes(cat);
+      return {
+        ...prev,
+        categorias: exists ? current.filter((c) => c !== cat) : [...current, cat],
+      };
     });
   };
 
@@ -302,18 +197,7 @@ export default function App() {
         filters={filters}
         setFilters={setFilters}
         onOpenExport={() => setIsExportOpen(true)}
-        onOpenAddBook={() => {
-          requireAdmin(() => {
-            setBookToEdit(null);
-            setIsFormOpen(true);
-          });
-        }}
-        onDownloadTemplate={downloadSampleExcelTemplate}
-        onResetData={handleResetDemoData}
         totalBooks={books.length}
-        isAdmin={isAdmin}
-        hasAdminPin={Boolean(adminPin)}
-        onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onSyncRepoExcel={() => handleSyncFromRepoExcel(true)}
         isSyncingRepo={isSyncingRepo}
       />
@@ -321,36 +205,6 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* Repo Source Notice Banner */}
-        <div className="mb-6 p-4 bg-indigo-50/80 border border-indigo-200/80 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5 md:mt-0">
-              <FileSpreadsheet className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
-                <span>Fuente oficial: public/libreria.xlsx en GitHub</span>
-                {isRepoExcelActive && (
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-semibold border border-emerald-200">
-                    Sincronizado
-                  </span>
-                )}
-              </p>
-              <p className="text-xs text-indigo-800/90 mt-0.5 leading-relaxed">
-                El catálogo que ven todos los visitantes se carga directamente desde el archivo <strong>libreria.xlsx</strong> alojado en tu repositorio. Para cambiar o agregar libros permanentemente en la web, actualiza ese archivo Excel en GitHub.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => handleSyncFromRepoExcel(true)}
-            disabled={isSyncingRepo}
-            className="self-end md:self-auto px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors shrink-0 flex items-center gap-1.5"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingRepo ? 'animate-spin' : ''}`} />
-            <span>Recargar Excel</span>
-          </button>
-        </div>
-
         {/* Statistics & Filter Bar */}
         <StatsDashboard
           books={books}
@@ -370,9 +224,9 @@ export default function App() {
             <div>
               <h3 className="font-bold text-slate-900 text-base">No se encontraron libros</h3>
               <p className="text-xs text-slate-500 mt-1">
-                {filters.query || filters.categoria || filters.estanteria
+                {filters.query || filters.categorias.length > 0 || filters.editoriales.length > 0 || filters.estanterias.length > 0 || filters.estados.length > 0
                   ? 'Intenta borrar algunos filtros de búsqueda para ver más resultados.'
-                  : 'Tu librería está vacía. ¡Recarga el catálogo desde public/libreria.xlsx en el repositorio o agrega tu primer libro!'}
+                  : 'No hay libros disponibles en el catálogo.'}
               </p>
             </div>
             <div className="flex justify-center gap-2 pt-2">
@@ -382,17 +236,7 @@ export default function App() {
                 className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${isSyncingRepo ? 'animate-spin' : ''}`} />
-                <span>Recargar Repo Excel</span>
-              </button>
-              <button
-                onClick={() => {
-                  setBookToEdit(null);
-                  setIsFormOpen(true);
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-semibold hover:bg-amber-700 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nuevo Libro</span>
+                <span>Recargar Excel</span>
               </button>
             </div>
           </div>
@@ -405,13 +249,7 @@ export default function App() {
                     key={book.id}
                     book={book}
                     onSelectBook={(b) => setSelectedBook(b)}
-                    onEditBook={(b) => {
-                      requireAdmin(() => {
-                        setBookToEdit(b);
-                        setIsFormOpen(true);
-                      });
-                    }}
-                    onDeleteBook={handleDeleteBook}
+                    onToggleCategory={handleToggleCategory}
                   />
                 ))}
               </div>
@@ -421,13 +259,7 @@ export default function App() {
               <BookTable
                 books={filteredBooks}
                 onSelectBook={(b) => setSelectedBook(b)}
-                onEditBook={(b) => {
-                  requireAdmin(() => {
-                    setBookToEdit(b);
-                    setIsFormOpen(true);
-                  });
-                }}
-                onDeleteBook={handleDeleteBook}
+                onToggleCategory={handleToggleCategory}
               />
             )}
 
@@ -444,19 +276,13 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-          <p>Librería Digital • Gestión de Catálogo y Estanterías</p>
+          <p>Librería Gerard • Catálogo de Libros y Estanterías</p>
           <div className="flex items-center space-x-4">
             <button
-              onClick={downloadSampleExcelTemplate}
-              className="hover:text-amber-700 underline"
-            >
-              Descargar Plantilla Excel
-            </button>
-            <button
-              onClick={handleResetDemoData}
+              onClick={() => handleSyncFromRepoExcel(true)}
               className="hover:text-slate-800 flex items-center gap-1"
             >
-              <RefreshCw className="w-3 h-3" /> Reestablecer Demo
+              <RefreshCw className="w-3 h-3" /> Sincronizar Catálogo
             </button>
           </div>
         </div>
@@ -466,49 +292,12 @@ export default function App() {
       <BookDetailModal
         book={selectedBook}
         onClose={() => setSelectedBook(null)}
-        onEdit={(b) => {
-          requireAdmin(() => {
-            setBookToEdit(b);
-            setIsFormOpen(true);
-          });
-        }}
-      />
-
-      <BookFormModal
-        isOpen={isFormOpen}
-        bookToEdit={bookToEdit}
-        onClose={() => setIsFormOpen(false)}
-        onSave={handleSaveBook}
-        existingEstanterias={estanterias}
-        existingUbicaciones={ubicaciones}
-      />
-
-      <ImportExcelModal
-        isOpen={isImportOpen}
-        onClose={() => setIsImportOpen(false)}
-        onImportSuccess={handleImportSuccess}
       />
 
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
         books={books}
-      />
-
-      <AdminModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
-        adminPin={adminPin}
-        setAdminPin={setAdminPin}
-        isAdmin={isAdmin}
-        setIsAdmin={setIsAdmin}
-        showToast={showToast}
-        onAuthenticatedSuccess={() => {
-          if (pendingAction) {
-            pendingAction();
-            setPendingAction(null);
-          }
-        }}
       />
     </div>
   );

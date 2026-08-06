@@ -158,7 +158,8 @@ export const parseExcelRows = (rawRows: ExcelImportRow[]): Book[] => {
 };
 
 export const fetchRepoExcelFile = async (): Promise<Book[]> => {
-  const baseUrl = import.meta.env.BASE_URL || '/';
+  const metaEnv = (import.meta as unknown as { env?: { BASE_URL?: string } }).env;
+  const baseUrl = metaEnv?.BASE_URL || '/';
   const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
   const fileUrl = `${cleanBase}libreria.xlsx?v=${Date.now()}`;
 

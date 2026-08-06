@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Book } from '../types/book';
-import { ExternalLink, Edit2, Trash2, MapPin, ArrowUpDown, Image as ImageIcon } from 'lucide-react';
+import { ExternalLink, MapPin, ArrowUpDown, Image as ImageIcon } from 'lucide-react';
 
 interface BookTableProps {
   books: Book[];
   onSelectBook: (book: Book) => void;
-  onEditBook: (book: Book) => void;
-  onDeleteBook: (id: string) => void;
+  onToggleCategory?: (category: string) => void;
 }
 
 type SortField = 'titulo' | 'isbn' | 'editorial' | 'estanteria' | 'categoria';
@@ -14,8 +13,7 @@ type SortField = 'titulo' | 'isbn' | 'editorial' | 'estanteria' | 'categoria';
 export const BookTable: React.FC<BookTableProps> = ({
   books,
   onSelectBook,
-  onEditBook,
-  onDeleteBook,
+  onToggleCategory,
 }) => {
   const [sortField, setSortField] = useState<SortField>('titulo');
   const [sortAsc, setSortAsc] = useState(true);
@@ -88,7 +86,7 @@ export const BookTable: React.FC<BookTableProps> = ({
                 </div>
               </th>
               <th className="py-3 px-4 text-center">Estado</th>
-              <th className="py-3 px-4 text-right">Acciones</th>
+              <th className="py-3 px-4 text-right">Detalles</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
@@ -150,7 +148,14 @@ export const BookTable: React.FC<BookTableProps> = ({
                         .map((cat, idx) => (
                           <span
                             key={idx}
-                            className="inline-block px-2 py-0.5 text-[11px] font-semibold bg-amber-50 text-amber-900 rounded-md border border-amber-200/80"
+                            onClick={(e) => {
+                              if (onToggleCategory) {
+                                e.stopPropagation();
+                                onToggleCategory(cat);
+                              }
+                            }}
+                            className="inline-block px-2 py-0.5 text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-md border border-amber-200/80 cursor-pointer transition-colors"
+                            title={`Filtrar por ${cat}`}
                           >
                             {cat}
                           </span>
@@ -204,18 +209,10 @@ export const BookTable: React.FC<BookTableProps> = ({
                       </a>
                     )}
                     <button
-                      onClick={() => onEditBook(book)}
-                      className="p-1.5 text-slate-400 hover:text-amber-700 hover:bg-slate-100 rounded-lg transition-colors"
-                      title="Editar"
+                      onClick={() => onSelectBook(book)}
+                      className="px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors font-medium"
                     >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onDeleteBook(book.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="w-4 h-4" />
+                      Ver
                     </button>
                   </div>
                 </td>
