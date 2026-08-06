@@ -7,7 +7,6 @@ interface NavbarProps {
   setViewMode: (mode: ViewMode) => void;
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
-  onOpenImport: () => void;
   onOpenExport: () => void;
   onOpenAddBook: () => void;
   onDownloadTemplate: () => void;
@@ -25,7 +24,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   setViewMode,
   filters,
   setFilters,
-  onOpenImport,
   onOpenExport,
   onOpenAddBook,
   onDownloadTemplate,
@@ -50,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none flex items-center gap-2">
-                  Librería Digital
+                  Librería Gerard
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                     {totalBooks} {totalBooks === 1 ? 'libro' : 'libros'}
                   </span>
@@ -190,15 +188,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <RefreshCw className={`w-4 h-4 text-indigo-600 ${isSyncingRepo ? 'animate-spin' : ''}`} />
                 <span>Recargar Repo Excel</span>
-              </button>
-
-              <button
-                onClick={onOpenImport}
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold transition-colors"
-                title="Importar catálogo local desde un archivo Excel"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                <span className="hidden sm:inline">Importar</span>
               </button>
 
               <button

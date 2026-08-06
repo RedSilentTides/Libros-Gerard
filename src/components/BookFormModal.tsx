@@ -206,15 +206,18 @@ export const BookFormModal: React.FC<BookFormModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Categoría / Género
+                Categorías (separadas por coma)
               </label>
               <input
                 type="text"
-                placeholder="Ej: Fantasía Épica, Fantasía Romántica"
+                placeholder="Ej: Aventura De Ficción, Fantasía Heroica, Fantasía Urbana"
                 value={formData.categoria || ''}
                 onChange={(e) => setFormData((prev) => ({ ...prev, categoria: e.target.value }))}
                 className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Puedes agregar múltiples categorías separadas por coma.
+              </p>
             </div>
           </div>
 

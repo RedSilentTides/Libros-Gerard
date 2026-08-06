@@ -125,10 +125,25 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({ book, onClose,
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 col-span-2">
-                  <span className="text-slate-400 font-medium block">Categorías</span>
-                  <span className="font-semibold text-slate-800 mt-0.5 block">
-                    {book.categoria || 'Sin categoría'}
-                  </span>
+                  <span className="text-slate-400 font-medium block mb-1">Categorías</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {book.categoria ? (
+                      book.categoria
+                        .split(',')
+                        .map((cat) => cat.trim())
+                        .filter(Boolean)
+                        .map((cat, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs font-semibold px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-md"
+                          >
+                            {cat}
+                          </span>
+                        ))
+                    ) : (
+                      <span className="text-slate-500 italic">Sin categoría</span>
+                    )}
+                  </div>
                 </div>
               </div>
 

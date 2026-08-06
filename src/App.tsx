@@ -175,8 +175,12 @@ export default function App() {
         if (!matchesQuery) return false;
       }
 
-      if (filters.categoria && !b.categoria.toLowerCase().includes(filters.categoria.toLowerCase())) {
-        return false;
+      if (filters.categoria) {
+        const targetCat = filters.categoria.toLowerCase().trim();
+        const bookCats = b.categoria ? b.categoria.split(',').map((c) => c.toLowerCase().trim()) : [];
+        if (!bookCats.includes(targetCat) && !b.categoria.toLowerCase().includes(targetCat)) {
+          return false;
+        }
       }
       if (filters.editorial && b.editorial.toLowerCase() !== filters.editorial.toLowerCase()) {
         return false;
@@ -297,7 +301,6 @@ export default function App() {
         setViewMode={setViewMode}
         filters={filters}
         setFilters={setFilters}
-        onOpenImport={() => requireAdmin(() => setIsImportOpen(true))}
         onOpenExport={() => setIsExportOpen(true)}
         onOpenAddBook={() => {
           requireAdmin(() => {
@@ -369,16 +372,17 @@ export default function App() {
               <p className="text-xs text-slate-500 mt-1">
                 {filters.query || filters.categoria || filters.estanteria
                   ? 'Intenta borrar algunos filtros de búsqueda para ver más resultados.'
-                  : 'Tu librería está vacía. ¡Importa un archivo Excel o agrega tu primer libro!'}
+                  : 'Tu librería está vacía. ¡Recarga el catálogo desde public/libreria.xlsx en el repositorio o agrega tu primer libro!'}
               </p>
             </div>
             <div className="flex justify-center gap-2 pt-2">
               <button
-                onClick={() => setIsImportOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors"
+                onClick={() => handleSyncFromRepoExcel(true)}
+                disabled={isSyncingRepo}
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
               >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>Importar Excel</span>
+                <RefreshCw className={`w-4 h-4 ${isSyncingRepo ? 'animate-spin' : ''}`} />
+                <span>Recargar Repo Excel</span>
               </button>
               <button
                 onClick={() => {

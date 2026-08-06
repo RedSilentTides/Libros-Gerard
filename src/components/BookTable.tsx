@@ -142,9 +142,20 @@ export const BookTable: React.FC<BookTableProps> = ({
                 {/* Category */}
                 <td className="py-2.5 px-4 hidden lg:table-cell">
                   {book.categoria ? (
-                    <span className="inline-block px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-md border border-slate-200 max-w-[180px] truncate">
-                      {book.categoria}
-                    </span>
+                    <div className="flex flex-wrap gap-1 max-w-[240px]">
+                      {book.categoria
+                        .split(',')
+                        .map((cat) => cat.trim())
+                        .filter(Boolean)
+                        .map((cat, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-block px-2 py-0.5 text-[11px] font-semibold bg-amber-50 text-amber-900 rounded-md border border-amber-200/80"
+                          >
+                            {cat}
+                          </span>
+                        ))}
+                    </div>
                   ) : (
                     <span className="text-slate-400 text-xs italic">S/C</span>
                   )}

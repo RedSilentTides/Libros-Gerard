@@ -1,4 +1,4 @@
-# Digitalizador de Librería
+# Librería Gerard
 
 Aplicación web interactiva para digitalizar, organizar y gestionar un catálogo de libros físico y digital con soporte de importación/exportación Excel y visualización por estanterías.
 

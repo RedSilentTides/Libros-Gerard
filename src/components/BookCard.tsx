@@ -110,14 +110,18 @@ export const BookCard: React.FC<BookCardProps> = ({
           {/* Categories */}
           {book.categoria && (
             <div className="flex flex-wrap gap-1">
-              {book.categoria.split(',').slice(0, 2).map((cat, i) => (
-                <span
-                  key={i}
-                  className="text-[10px] font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md border border-slate-200/60 truncate max-w-[150px]"
-                >
-                  {cat.trim()}
-                </span>
-              ))}
+              {book.categoria
+                .split(',')
+                .map((cat) => cat.trim())
+                .filter(Boolean)
+                .map((cat, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] font-semibold px-2 py-0.5 bg-amber-50 text-amber-900 rounded-md border border-amber-200/80 truncate max-w-[160px]"
+                  >
+                    {cat}
+                  </span>
+                ))}
             </div>
           )}
 

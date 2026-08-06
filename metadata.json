@@ -1,5 +1,5 @@
 {
-  "name": "Digitalizador de Librería",
+  "name": "Librería Gerard",
   "description": "Catálogo y gestión digital de libros con física de estanterías, portadas, búscador y soporte para importar y exportar Excel.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
